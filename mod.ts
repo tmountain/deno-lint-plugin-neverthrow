@@ -12,11 +12,11 @@ const rule: Deno.lint.LintRule = {
 
     create(context: Deno.lint.RuleContext) {
         return {
-            CallExpression(node) {
-                if (isResultCall(node) && isStandalone(node)) {
+            ExpressionStatement(node) {
+                if (node.expression.type === "CallExpression" && isUnhandledResult(node.expression)) {
                     context.report({
                         node,
-                        message: "Result must be handled with `match`, `unwrapOr`, or `_unsafeUnwrap`.",
+                        message: "Result must be fully handled with `match`, `unwrapOr`, `_unsafeUnwrap`, or `await` for ResultAsync.",
                     });
                 }
             },
@@ -24,22 +24,28 @@ const rule: Deno.lint.LintRule = {
     },
 };
 
-// Detects `Result` methods (map, match, unwrapOr, etc.)
-function isResultCall(node: Deno.lint.CallExpression): boolean {
+// Detects if a `Result` or `ResultAsync` is used incorrectly
+function isUnhandledResult(node: Deno.lint.CallExpression): boolean {
+    if (node.callee.type === "Identifier") {
+        const funcName = node.callee.name;
+        return funcName === "ok" || funcName === "err"; // Unhandled `ok()` or `err()`
+    }
+
     if (node.callee.type === "MemberExpression") {
         const prop = node.callee.property;
         if (prop.type === "Identifier") {
-            return ["mapErr", "map", "andThen", "orElse", "match", "unwrapOr", "_unsafeUnwrap"]
-                .includes(prop.name);
+            const invalidHandlers = ["map", "mapErr", "andThen", "orElse"];
+            const validHandlers = ["match", "unwrapOr", "_unsafeUnwrap"];
+
+            if (invalidHandlers.includes(prop.name)) {
+                return true; // ❌ These do NOT fully handle the Result
+            }
+
+            return !validHandlers.includes(prop.name); // ✅ Ignore if properly handled
         }
     }
-    return false;
-}
 
-// Checks if the result is not assigned or used in an expression
-function isStandalone(node: Deno.lint.CallExpression): boolean {
-    const parent = node.parent;
-    return !parent || parent.type === "ExpressionStatement";
+    return false;
 }
 
 // Correctly structured plugin export
@@ -49,3 +55,4 @@ export default {
         "must-use-result": rule,
     },
 } as Deno.lint.LintPluginModule;
+
