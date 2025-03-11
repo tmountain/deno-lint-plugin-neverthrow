@@ -1,0 +1,5 @@
+{
+	"lint": {
+		"plugins": ["https://deno.land/x/deno_lint_plugin_neverthrow/mod.ts"]
+	}
+}
