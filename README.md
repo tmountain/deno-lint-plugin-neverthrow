@@ -2,6 +2,8 @@
 
 🚀 **A Deno Lint Plugin to enforce proper handling of `neverthrow` Result values.**  
 
+[`https://deno.land/x/deno_lint_plugin_neverthrow`](https://deno.land/x/deno_lint_plugin_neverthrow)
+
 This plugin ensures that `Result` values from [`neverthrow`](https://github.com/supermacro/neverthrow) are properly handled using `.match()`, `.unwrapOr()`, or `_unsafeUnwrap()`, preventing silent failures.
 
 ## 📌 Features
